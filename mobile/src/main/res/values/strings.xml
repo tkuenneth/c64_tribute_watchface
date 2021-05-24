@@ -1,0 +1,23 @@
+<resources>
+
+    <string name="app_name">C64 Tribute Watch Face</string>
+
+    <string name="settings">Settings</string>
+    <string name="appearance">Appearance</string>
+    <string name="seconds">seconds</string>
+    <string name="date">date</string>
+    <string name="uppercase">uppercase only</string>
+
+    <string name="info">Info</string>
+    <string name="about1">The primary purpose of this app is to provide a watchface for Wear OS by Google smartwatches.
+But on smartphones and tablets it should be useful at least a little bit, too. So it can show the
+current date and time. Nothing more. Nothing less.
+    </string>
+    <string name="about2">Privacy statement</string>
+    <string name="about3">This app contains NO advertisements. The app does NOT access, process, store
+or send personal data.</string>
+    <string name="about4">C64 TrueType (TTF) Fonts</string>
+    <string name="about5">This app uses one font of the C64 TrueType Fonts Collection by style64.org.
+Please find their license at https://style64.org/c64-truetype/license</string>
+
+</resources>

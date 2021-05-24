@@ -1,0 +1,24 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.0-alpha12'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.30'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+    }
+}

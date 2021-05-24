@@ -1,0 +1,9 @@
+<resources>
+
+    <string name="app_name">C64 Tribute Watch Face</string>
+    <string name="config_name">C64 Tribute Watch Face Settings</string>
+    <string name="config_seconds">seconds</string>
+    <string name="config_date">date</string>
+    <string name="config_uppercase">uppercase only</string>
+
+</resources>
