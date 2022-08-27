@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.options, menu)
         return super.onPrepareOptionsMenu(menu)
     }

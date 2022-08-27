@@ -1,6 +1,6 @@
 /*
  * This file is part of C64 Tribute Watch Face
- * Copyright (C) 2014 - 2017  Thomas Kuenneth
+ * Copyright (C) 2014 - 2022  Thomas Kuenneth
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,15 +55,12 @@ public class C64WatchFaceService extends CanvasWatchFaceService {
 
     private class Engine extends CanvasWatchFaceService.Engine {
 
-        Callable<Boolean> callback = new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                boolean result = shouldTimerBeRunning();
-                if (result) {
-                    invalidate();
-                }
-                return result;
+        Callable<Boolean> callback = () -> {
+            boolean result = shouldTimerBeRunning();
+            if (result) {
+                invalidate();
             }
+            return result;
         };
 
         /* receiver to update the time zone */
