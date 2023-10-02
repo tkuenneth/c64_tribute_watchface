@@ -9,7 +9,7 @@ android {
         minSdkVersion 19
         //noinspection EditedTargetSdkVersion
         targetSdkVersion 34
-        versionCode 13701
+        versionCode 13703
         versionName "1.3.7"
     }
 
