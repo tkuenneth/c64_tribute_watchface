@@ -2,14 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
+    compileSdk 34
 
-    compileSdk 33
     defaultConfig {
         applicationId "com.thomaskuenneth.c64watchface"
         minSdkVersion 19
-        targetSdkVersion 33
-        versionCode 13601
-        versionName "1.3.6"
+        //noinspection EditedTargetSdkVersion
+        targetSdkVersion 34
+        versionCode 13701
+        versionName "1.3.7"
     }
 
     buildTypes {
@@ -24,16 +25,25 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    namespace 'com.thomaskuenneth.c64watchface'
 }
 
 dependencies {
     implementation project(":common")
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.5.0'
-    implementation 'com.google.android.material:material:1.6.1'
-    implementation "androidx.preference:preference-ktx:1.2.0"
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation "androidx.preference:preference-ktx:1.2.1"
     wearApp project(':wear')
 }

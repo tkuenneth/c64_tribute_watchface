@@ -39,7 +39,7 @@ public class C64 {
     public static final String PREFS_SECONDS = "seconds";
     public static final String PREFS_UPPERCASE = "uppercase";
 
-    // calculazed text height
+    // calculated text height
     public float last;
 
     // C64 cursor visible
@@ -128,9 +128,9 @@ public class C64 {
                 h - borderHeight - 1);
 
         if (isRound) {
-            canvas.drawCircle(bounds.width() / 2,
-                    bounds.height() / 2,
-                    (bounds.width() - borderWidth) / 2,
+            canvas.drawCircle(bounds.width() / 2F,
+                    bounds.height() / 2F,
+                    (bounds.width() - borderWidth) / 2F,
                     backgroundPaint);
         } else {
             canvas.drawRect(r, backgroundPaint);
