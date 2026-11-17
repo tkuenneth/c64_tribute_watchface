@@ -165,13 +165,13 @@ jobs:
             echo "Error: the listing metadata did not travel with the bundle."
             exit 1
           fi
-          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to the internal testing track."
+          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to the Wear OS internal testing track."
           echo "Listing texts: $(find "$METADATA" -mindepth 2 -maxdepth 2 -name '*.txt' -type f | wc -l) files"
           echo "Screenshots: $(find "$METADATA" -path '*/images/wearScreenshots/*' -type f | wc -l) files"
           fastlane supply \
             --package_name com.thomaskuenneth.c64watchface \
             --aab "$AAB" \
-            --track internal \
+            --track wear:qa \
             --metadata_path "$METADATA"
 
   cleanup:
