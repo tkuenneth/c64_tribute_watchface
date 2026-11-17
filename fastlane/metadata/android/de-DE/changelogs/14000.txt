@@ -1,0 +1,6 @@
+- Neu umgesetzt im Watch Face Format, das Wear OS jetzt verlangt
+- Die drei Optionen liegen nun im Zifferblatt-Editor des Systems
+- Der Ambient-Modus zeigt Weiß auf Schwarz, wie es der C64 tat
+- Das Datum folgt der Reihenfolge deiner Sprache
+- Runde, quadratische und rechteckige Uhren bekommen ein eigenes Layout
+- Neue Schrift Pet Me 64, eine pixelgenaue Nachbildung des C64-Zeichensatzes

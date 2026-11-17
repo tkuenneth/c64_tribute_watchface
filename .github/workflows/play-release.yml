@@ -1,0 +1,189 @@
+name: Upload to Play Internal Testing
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TZ: UTC
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
+
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version_code: ${{ steps.version_info.outputs.version_code }}
+      version_name: ${{ steps.version_info.outputs.version_name }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36'
+
+      - name: Ensure local.properties is not used in CI
+        run: rm -f local.properties
+
+      - name: Grant rights
+        run: chmod +x gradlew
+
+      - name: Build Release AAB
+        run: ./gradlew bundleRelease
+
+      - name: Get Version Info
+        id: version_info
+        run: |
+          VERSION_CODE=$(grep -E '^\s*versionCode\s*=' watchface/build.gradle.kts | head -n 1 | grep -oE '[0-9]+')
+          VERSION_NAME=$(grep -E '^\s*versionName\s*=' watchface/build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "Error: could not read a numeric versionCode from watchface/build.gradle.kts (got '$VERSION_CODE')"
+            exit 1
+          fi
+          if [ -z "$VERSION_NAME" ]; then
+            echo "Error: could not read versionName from watchface/build.gradle.kts"
+            exit 1
+          fi
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Collect the unsigned bundle and the listing
+        env:
+          OUT: ${{ runner.temp }}/out
+          VERSION_CODE: ${{ steps.version_info.outputs.version_code }}
+        run: |
+          mkdir -p "$OUT"
+          cp watchface/build/outputs/bundle/release/watchface-release.aab "$OUT/watchface-release.aab"
+          CHANGELOG_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "Error: $CHANGELOG_FILE is missing. Write the release notes before releasing."
+            exit 1
+          fi
+          cp -R fastlane/metadata/android "$OUT/metadata"
+
+      - name: Store the unsigned bundle for the publish job
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned-aab-and-listing
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+  publish:
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Fetch the unsigned bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unsigned-aab-and-listing
+          path: ${{ runner.temp }}/in
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Sign AAB
+        id: sign
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          ALIAS: ${{ secrets.ALIAS }}
+        run: |
+          if [ -z "$SIGNING_KEY" ] || [ -z "$ALIAS" ]; then
+            echo "Error: signing secrets are not set."
+            exit 1
+          fi
+          KEYSTORE="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          ( umask 077; printf '%s' "$SIGNING_KEY" | base64 -d > "$KEYSTORE" )
+
+          AAB="$RUNNER_TEMP/in/watchface-release.aab"
+
+          jarsigner -verbose \
+            -keystore "$KEYSTORE" \
+            -storepass:env KEY_STORE_PASSWORD \
+            -keypass:env KEY_PASSWORD \
+            "$AAB" "$ALIAS"
+
+          echo "bundleFile=$AAB" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        with:
+          ruby-version: '3.3'
+
+      - name: Install fastlane
+        run: gem install fastlane -v 2.240.1 --no-document
+
+      - name: Upload to Play internal testing
+        env:
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          AAB: ${{ steps.sign.outputs.bundleFile }}
+          METADATA: ${{ runner.temp }}/in/metadata
+          VERSION_CODE: ${{ needs.build.outputs.version_code }}
+          VERSION_NAME: ${{ needs.build.outputs.version_name }}
+        run: |
+          if [ -z "$SUPPLY_JSON_KEY_DATA" ]; then
+            echo "Error: PLAY_SERVICE_ACCOUNT_JSON secret is not set."
+            exit 1
+          fi
+          if [ ! -d "$METADATA" ]; then
+            echo "Error: the listing metadata did not travel with the bundle."
+            exit 1
+          fi
+          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to the internal testing track."
+          echo "Listing texts: $(find "$METADATA" -mindepth 2 -maxdepth 2 -name '*.txt' -type f | wc -l) files"
+          echo "Screenshots: $(find "$METADATA" -path '*/images/wearScreenshots/*' -type f | wc -l) files"
+          fastlane supply \
+            --package_name com.thomaskuenneth.c64watchface \
+            --aab "$AAB" \
+            --track internal \
+            --metadata_path "$METADATA"
+
+  cleanup:
+    needs: [build, publish]
+    if: ${{ !cancelled() && needs.publish.result == 'success' && needs.build.outputs.artifact_id != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete the bundle artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+        run: gh api -X DELETE "repos/${REPO}/actions/artifacts/${ARTIFACT_ID}"
