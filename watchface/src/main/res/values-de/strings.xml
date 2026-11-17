@@ -1,0 +1,7 @@
+<resources>
+
+    <string name="config_seconds">Sekunden</string>
+    <string name="config_date">Datum</string>
+    <string name="config_uppercase">nur Großbuchstaben</string>
+
+</resources>

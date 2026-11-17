@@ -1,0 +1,645 @@
+<?xml version="1.0"?>
+<WatchFace width="450" height="450">
+    <Metadata key="CLOCK_TYPE" value="DIGITAL" />
+    <Metadata key="PREVIEW_TIME" value="10:08:32" />
+    <UserConfigurations>
+        <BooleanConfiguration id="seconds" displayName="@string/config_seconds"
+            screenReaderText="@string/config_seconds" defaultValue="FALSE" />
+        <BooleanConfiguration id="date" displayName="@string/config_date"
+            screenReaderText="@string/config_date" defaultValue="FALSE" />
+        <BooleanConfiguration id="uppercase" displayName="@string/config_uppercase"
+            screenReaderText="@string/config_uppercase" defaultValue="FALSE" />
+    </UserConfigurations>
+    <Scene backgroundColor="#ff000000">
+        <Group name="interactive" x="0" y="0" width="450" height="450" alpha="255">
+            <PartDraw x="0" y="0" width="450" height="450">
+                <Rectangle x="0" y="0" width="450" height="450">
+                    <Fill color="#ff6c5eb5" />
+                </Rectangle>
+            </PartDraw>
+            <PartDraw x="0" y="0" width="450" height="450">
+                <Ellipse x="11" y="11" width="428" height="428">
+                    <Fill color="#ff352879" />
+                </Ellipse>
+            </PartDraw>
+            <Condition>
+                <Expressions>
+                    <Expression name="is_24_hour"><![CDATA[[IS_24_HOUR_MODE]]]></Expression>
+                </Expressions>
+                <Compare expression="is_24_hour">
+                    <Group name="day_yes" x="0" y="0" width="450" height="450">
+                        <Condition>
+                            <Expressions>
+                                <Expression name="with_seconds"><![CDATA[[CONFIGURATION.seconds] == "TRUE"]]></Expression>
+                            </Expressions>
+                            <Compare expression="with_seconds">
+                                <Group name="day_24h_yes" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="day_24h_secs_yes" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="175" width="400" height="50">
+                                                    <TimeText format="hh:mm:ss" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="50">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                                <PartText x="25" y="275" width="50" height="50" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="day_24h_secs_no" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="200" width="400" height="50">
+                                                    <TimeText format="hh:mm:ss" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="50">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <PartText x="25" y="250" width="50" height="50" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Compare>
+                            <Default>
+                                <Group name="day_24h_no" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="day_24h_nosecs_yes" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="27" y="159" width="330" height="66">
+                                                    <TimeText format="hh:mm" hourFormat="24" align="START"
+                                                        x="0" y="0" width="330" height="66">
+                                                        <Font family="petme64" size="66" color="#ff6c5eb5" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="27" y="225" width="396" height="66">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="66" color="#ff6c5eb5">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="27" y="225" width="396" height="66">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="66" color="#ff6c5eb5">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                                <PartText x="27" y="291" width="66" height="66" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="66" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="day_24h_nosecs_no" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="185" width="400" height="80">
+                                                    <TimeText format="hh:mm" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="80">
+                                                        <Font family="petme64" size="80" color="#ff6c5eb5" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <PartText x="25" y="265" width="80" height="80" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="80" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Default>
+                        </Condition>
+                    </Group>
+                </Compare>
+                <Default>
+                    <Group name="day_no" x="0" y="0" width="450" height="450">
+                        <Condition>
+                            <Expressions>
+                                <Expression name="with_seconds"><![CDATA[[CONFIGURATION.seconds] == "TRUE"]]></Expression>
+                            </Expressions>
+                            <Compare expression="with_seconds">
+                                <Group name="day_12h_yes" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="day_12h_secs_yes" x="0" y="0" width="450" height="450">
+                                                <Group name="day_12h_secs_date_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="27" y="189" width="288" height="36">
+                                                        <TimeText format="hh:mm:ss" hourFormat="12" align="START"
+                                                            x="0" y="0" width="288" height="36">
+                                                            <Font family="petme64" size="36" color="#ff6c5eb5" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 108 : 0" />
+                                                </Group>
+                                                <PartText x="351" y="189" width="72" height="36">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ff6c5eb5">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 27 : 351" />
+                                                </PartText>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="27" y="225" width="216" height="36">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="36" color="#ff6c5eb5">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="27" y="225" width="216" height="36">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="36" color="#ff6c5eb5">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                                <PartText x="27" y="261" width="36" height="36" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="day_12h_secs_no" x="0" y="0" width="450" height="450">
+                                                <Group name="day_12h_secs_plain_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="27" y="207" width="288" height="36">
+                                                        <TimeText format="hh:mm:ss" hourFormat="12" align="START"
+                                                            x="0" y="0" width="288" height="36">
+                                                            <Font family="petme64" size="36" color="#ff6c5eb5" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 108 : 0" />
+                                                </Group>
+                                                <PartText x="351" y="207" width="72" height="36">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ff6c5eb5">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 27 : 351" />
+                                                </PartText>
+                                                <PartText x="27" y="243" width="36" height="36" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Compare>
+                            <Default>
+                                <Group name="day_12h_no" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="day_12h_nosecs_yes" x="0" y="0" width="450" height="450">
+                                                <Group name="day_12h_nosecs_date_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="25" y="175" width="250" height="50">
+                                                        <TimeText format="hh:mm" hourFormat="12" align="START"
+                                                            x="0" y="0" width="250" height="50">
+                                                            <Font family="petme64" size="50" color="#ff6c5eb5" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 150 : 0" />
+                                                </Group>
+                                                <PartText x="325" y="175" width="100" height="50">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 25 : 325" />
+                                                </PartText>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                                <PartText x="25" y="275" width="50" height="50" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="day_12h_nosecs_no" x="0" y="0" width="450" height="450">
+                                                <Group name="day_12h_nosecs_plain_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="25" y="200" width="250" height="50">
+                                                        <TimeText format="hh:mm" hourFormat="12" align="START"
+                                                            x="0" y="0" width="250" height="50">
+                                                            <Font family="petme64" size="50" color="#ff6c5eb5" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 150 : 0" />
+                                                </Group>
+                                                <PartText x="325" y="200" width="100" height="50">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 25 : 325" />
+                                                </PartText>
+                                                <PartText x="25" y="250" width="50" height="50" alpha="255">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ff6c5eb5">█</Font>
+                                                    </Text>
+                                                    <Transform target="alpha" value="(([UTC_TIMESTAMP] % 666) &lt; 333) ? 255 : 0" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Default>
+                        </Condition>
+                    </Group>
+                </Default>
+            </Condition>
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+        </Group>
+        <Group name="ambient" x="0" y="0" width="450" height="450" alpha="0">
+            <Condition>
+                <Expressions>
+                    <Expression name="is_24_hour"><![CDATA[[IS_24_HOUR_MODE]]]></Expression>
+                </Expressions>
+                <Compare expression="is_24_hour">
+                    <Group name="night_yes" x="0" y="0" width="450" height="450">
+                        <Condition>
+                            <Expressions>
+                                <Expression name="with_seconds"><![CDATA[[CONFIGURATION.seconds] == "TRUE"]]></Expression>
+                            </Expressions>
+                            <Compare expression="with_seconds">
+                                <Group name="night_24h_yes" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="night_24h_secs_yes" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="175" width="400" height="50">
+                                                    <TimeText format="hh:mm:ss" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="50">
+                                                        <Font family="petme64" size="50" color="#ffffffff" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ffffffff">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ffffffff">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="night_24h_secs_no" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="200" width="400" height="50">
+                                                    <TimeText format="hh:mm:ss" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="50">
+                                                        <Font family="petme64" size="50" color="#ffffffff" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Compare>
+                            <Default>
+                                <Group name="night_24h_no" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="night_24h_nosecs_yes" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="27" y="159" width="330" height="66">
+                                                    <TimeText format="hh:mm" hourFormat="24" align="START"
+                                                        x="0" y="0" width="330" height="66">
+                                                        <Font family="petme64" size="66" color="#ffffffff" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="27" y="225" width="396" height="66">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="66" color="#ffffffff">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="27" y="225" width="396" height="66">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="66" color="#ffffffff">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="night_24h_nosecs_no" x="0" y="0" width="450" height="450">
+                                                <DigitalClock x="25" y="185" width="400" height="80">
+                                                    <TimeText format="hh:mm" hourFormat="24" align="START"
+                                                        x="0" y="0" width="400" height="80">
+                                                        <Font family="petme64" size="80" color="#ffffffff" />
+                                                    </TimeText>
+                                                </DigitalClock>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Default>
+                        </Condition>
+                    </Group>
+                </Compare>
+                <Default>
+                    <Group name="night_no" x="0" y="0" width="450" height="450">
+                        <Condition>
+                            <Expressions>
+                                <Expression name="with_seconds"><![CDATA[[CONFIGURATION.seconds] == "TRUE"]]></Expression>
+                            </Expressions>
+                            <Compare expression="with_seconds">
+                                <Group name="night_12h_yes" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="night_12h_secs_yes" x="0" y="0" width="450" height="450">
+                                                <Group name="night_12h_secs_date_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="27" y="189" width="288" height="36">
+                                                        <TimeText format="hh:mm:ss" hourFormat="12" align="START"
+                                                            x="0" y="0" width="288" height="36">
+                                                            <Font family="petme64" size="36" color="#ffffffff" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 108 : 0" />
+                                                </Group>
+                                                <PartText x="351" y="189" width="72" height="36">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ffffffff">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 27 : 351" />
+                                                </PartText>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="27" y="225" width="216" height="36">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="36" color="#ffffffff">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="27" y="225" width="216" height="36">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="36" color="#ffffffff">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="night_12h_secs_no" x="0" y="0" width="450" height="450">
+                                                <Group name="night_12h_secs_plain_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="27" y="207" width="288" height="36">
+                                                        <TimeText format="hh:mm:ss" hourFormat="12" align="START"
+                                                            x="0" y="0" width="288" height="36">
+                                                            <Font family="petme64" size="36" color="#ffffffff" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 108 : 0" />
+                                                </Group>
+                                                <PartText x="351" y="207" width="72" height="36">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="36" color="#ffffffff">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 27 : 351" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Compare>
+                            <Default>
+                                <Group name="night_12h_no" x="0" y="0" width="450" height="450">
+                                    <Condition>
+                                        <Expressions>
+                                            <Expression name="with_date"><![CDATA[[CONFIGURATION.date] == "TRUE"]]></Expression>
+                                        </Expressions>
+                                        <Compare expression="with_date">
+                                            <Group name="night_12h_nosecs_yes" x="0" y="0" width="450" height="450">
+                                                <Group name="night_12h_nosecs_date_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="25" y="175" width="250" height="50">
+                                                        <TimeText format="hh:mm" hourFormat="12" align="START"
+                                                            x="0" y="0" width="250" height="50">
+                                                            <Font family="petme64" size="50" color="#ffffffff" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 150 : 0" />
+                                                </Group>
+                                                <PartText x="325" y="175" width="100" height="50">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ffffffff">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 25 : 325" />
+                                                </PartText>
+                                                <Condition>
+                                                    <Expressions>
+                                                        <Expression name="as_upper"><![CDATA[[CONFIGURATION.uppercase] == "TRUE"]]></Expression>
+                                                    </Expressions>
+                                                    <Compare expression="as_upper">
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ffffffff">
+                                                                    <Upper>
+                                                                        <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                    </Upper>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Compare>
+                                                    <Default>
+                                                        <PartText x="25" y="225" width="300" height="50">
+                                                            <Text align="START">
+                                                                <Font family="petme64" size="50" color="#ffffffff">
+                                                                    <Template>%s<Parameter expression="icuText(&quot;EE d&quot;)" /></Template>
+                                                                </Font>
+                                                            </Text>
+                                                        </PartText>
+                                                    </Default>
+                                                </Condition>
+                                            </Group>
+                                        </Compare>
+                                        <Default>
+                                            <Group name="night_12h_nosecs_no" x="0" y="0" width="450" height="450">
+                                                <Group name="night_12h_nosecs_plain_clock" x="0" y="0" width="450" height="450">
+                                                    <DigitalClock x="25" y="200" width="250" height="50">
+                                                        <TimeText format="hh:mm" hourFormat="12" align="START"
+                                                            x="0" y="0" width="250" height="50">
+                                                            <Font family="petme64" size="50" color="#ffffffff" />
+                                                        </TimeText>
+                                                    </DigitalClock>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 150 : 0" />
+                                                </Group>
+                                                <PartText x="325" y="200" width="100" height="50">
+                                                    <Text align="START">
+                                                        <Font family="petme64" size="50" color="#ffffffff">
+                                                            <Template>%s<Parameter expression="[AMPM_STRING]" /></Template>
+                                                        </Font>
+                                                    </Text>
+                                                    <Transform target="x" value="[AMPM_POSITION] == 0 ? 25 : 325" />
+                                                </PartText>
+                                            </Group>
+                                        </Default>
+                                    </Condition>
+                                </Group>
+                            </Default>
+                        </Condition>
+                    </Group>
+                </Default>
+            </Condition>
+            <Variant mode="AMBIENT" target="alpha" value="255" />
+        </Group>
+    </Scene>
+</WatchFace>
