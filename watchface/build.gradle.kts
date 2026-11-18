@@ -11,7 +11,7 @@ android {
         applicationId = "com.thomaskuenneth.c64watchface"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 14000
+        versionCode = 14001
         versionName = "1.4.0"
     }
 
