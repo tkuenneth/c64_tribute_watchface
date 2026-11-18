@@ -2,6 +2,11 @@ name: Upload to Play Internal Testing
 
 on:
   workflow_dispatch:
+    inputs:
+      track:
+        description: 'Play track to upload to'
+        type: string
+        default: 'wear:internal'
 
 permissions:
   contents: read
@@ -149,9 +154,10 @@ jobs:
       - name: Install fastlane
         run: gem install fastlane -v 2.240.1 --no-document
 
-      - name: Upload to Play internal testing
+      - name: Upload to the Play track
         env:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ inputs.track }}
           AAB: ${{ steps.sign.outputs.bundleFile }}
           METADATA: ${{ runner.temp }}/in/metadata
           VERSION_CODE: ${{ needs.build.outputs.version_code }}
@@ -165,13 +171,13 @@ jobs:
             echo "Error: the listing metadata did not travel with the bundle."
             exit 1
           fi
-          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to the Wear OS internal testing track."
+          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to track $TRACK."
           echo "Listing texts: $(find "$METADATA" -mindepth 2 -maxdepth 2 -name '*.txt' -type f | wc -l) files"
           echo "Screenshots: $(find "$METADATA" -path '*/images/wearScreenshots/*' -type f | wc -l) files"
           fastlane supply \
             --package_name com.thomaskuenneth.c64watchface \
             --aab "$AAB" \
-            --track wear:qa \
+            --track "$TRACK" \
             --metadata_path "$METADATA"
 
   cleanup:
