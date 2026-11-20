@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 37
+
+    defaultConfig {
+        applicationId "com.thomaskuenneth.c64watchface"
+        minSdkVersion 23
+        //noinspection EditedTargetSdkVersion
+        targetSdkVersion 37
+        versionCode project.findProperty("baseVersionCode").toString().toInteger() * 10 + 1
+        versionName project.findProperty("baseVersionName").toString()
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
+    }
+
+    namespace 'com.thomaskuenneth.c64watchface'
+}
+dependencies {
+    implementation project(":common")
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.google.android.support:wearable:2.9.0'
+    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
+    implementation 'androidx.percentlayout:percentlayout:1.0.0'
+//    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.wear:wear:1.4.0'
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:" + libs.versions.kotlin.get()))
+
+    compileOnly 'com.google.android.wearable:wearable:2.9.0'
+}

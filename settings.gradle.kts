@@ -16,3 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "C64TributeWatchFace"
 include(":watchface")
+include(":common")
+include(":mobile")
+include(":wear")
+include(":screenshots")

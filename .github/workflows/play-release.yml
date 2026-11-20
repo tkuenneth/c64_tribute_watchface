@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       track:
-        description: 'Play track to upload to'
+        description: 'Wear OS track for the watch bundles'
         type: string
         default: 'wear:internal'
+      mobile_track:
+        description: 'Track for the phone companion'
+        type: string
+        default: 'internal'
 
 permissions:
   contents: read
@@ -26,8 +30,10 @@ jobs:
     permissions:
       contents: read
     outputs:
-      version_code: ${{ steps.version_info.outputs.version_code }}
       version_name: ${{ steps.version_info.outputs.version_name }}
+      wear_version_code: ${{ steps.version_info.outputs.wear_version_code }}
+      mobile_version_code: ${{ steps.version_info.outputs.mobile_version_code }}
+      watchface_version_code: ${{ steps.version_info.outputs.watchface_version_code }}
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - name: Checkout
@@ -64,38 +70,53 @@ jobs:
       - name: Get Version Info
         id: version_info
         run: |
-          VERSION_CODE=$(grep -E '^\s*versionCode\s*=' watchface/build.gradle.kts | head -n 1 | grep -oE '[0-9]+')
-          VERSION_NAME=$(grep -E '^\s*versionName\s*=' watchface/build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
-          if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
-            echo "Error: could not read a numeric versionCode from watchface/build.gradle.kts (got '$VERSION_CODE')"
+          BASE_CODE=$(grep -E '^baseVersionCode=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          VERSION_NAME=$(grep -E '^baseVersionName=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          if ! [[ "$BASE_CODE" =~ ^[0-9]+$ ]]; then
+            echo "Error: could not read a numeric baseVersionCode from gradle.properties (got '$BASE_CODE')"
             exit 1
           fi
           if [ -z "$VERSION_NAME" ]; then
-            echo "Error: could not read versionName from watchface/build.gradle.kts"
+            echo "Error: could not read baseVersionName from gradle.properties"
             exit 1
           fi
-          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "wear_version_code=$((BASE_CODE * 10 + 1))" >> "$GITHUB_OUTPUT"
+          echo "mobile_version_code=$((BASE_CODE * 10 + 2))" >> "$GITHUB_OUTPUT"
+          echo "watchface_version_code=$((BASE_CODE * 10 + 3))" >> "$GITHUB_OUTPUT"
 
-      - name: Collect the unsigned bundle and the listing
+      - name: Collect the unsigned bundles and the listing
         env:
           OUT: ${{ runner.temp }}/out
-          VERSION_CODE: ${{ steps.version_info.outputs.version_code }}
+          WEAR_VERSION_CODE: ${{ steps.version_info.outputs.wear_version_code }}
+          MOBILE_VERSION_CODE: ${{ steps.version_info.outputs.mobile_version_code }}
+          WATCHFACE_VERSION_CODE: ${{ steps.version_info.outputs.watchface_version_code }}
         run: |
           mkdir -p "$OUT"
-          cp watchface/build/outputs/bundle/release/watchface-release.aab "$OUT/watchface-release.aab"
-          CHANGELOG_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
-          if [ ! -f "$CHANGELOG_FILE" ]; then
-            echo "Error: $CHANGELOG_FILE is missing. Write the release notes before releasing."
-            exit 1
-          fi
+          for module in watchface wear mobile; do
+            BUNDLE="$module/build/outputs/bundle/release/$module-release.aab"
+            if [ ! -f "$BUNDLE" ]; then
+              echo "Error: $BUNDLE was not built. Every form factor must ship in the release."
+              exit 1
+            fi
+            cp "$BUNDLE" "$OUT/$module-release.aab"
+          done
+          for LOCALE in fastlane/metadata/android/*/; do
+            for CODE in "$WEAR_VERSION_CODE" "$MOBILE_VERSION_CODE" "$WATCHFACE_VERSION_CODE"; do
+              CHANGELOG_FILE="${LOCALE}changelogs/${CODE}.txt"
+              if [ ! -f "$CHANGELOG_FILE" ]; then
+                echo "Error: $CHANGELOG_FILE is missing. Write the release notes before releasing."
+                exit 1
+              fi
+            done
+          done
           cp -R fastlane/metadata/android "$OUT/metadata"
 
       - name: Store the unsigned bundle for the publish job
         id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: unsigned-aab-and-listing
+          name: unsigned-aabs-and-listing
           path: ${{ runner.temp }}/out/
           if-no-files-found: error
           retention-days: 1
@@ -108,10 +129,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Fetch the unsigned bundle
+      - name: Fetch the unsigned bundles
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: unsigned-aab-and-listing
+          name: unsigned-aabs-and-listing
           path: ${{ runner.temp }}/in
 
       - name: Set up JDK 21
@@ -120,7 +141,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Sign AAB
+      - name: Sign the bundles
         id: sign
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
@@ -136,15 +157,18 @@ jobs:
           trap 'rm -f "$KEYSTORE"' EXIT
           ( umask 077; printf '%s' "$SIGNING_KEY" | base64 -d > "$KEYSTORE" )
 
-          AAB="$RUNNER_TEMP/in/watchface-release.aab"
-
-          jarsigner -verbose \
-            -keystore "$KEYSTORE" \
-            -storepass:env KEY_STORE_PASSWORD \
-            -keypass:env KEY_PASSWORD \
-            "$AAB" "$ALIAS"
-
-          echo "bundleFile=$AAB" >> "$GITHUB_OUTPUT"
+          for module in watchface wear mobile; do
+            AAB="$RUNNER_TEMP/in/$module-release.aab"
+            if [ ! -f "$AAB" ]; then
+              echo "Error: $AAB did not travel with the build job."
+              exit 1
+            fi
+            jarsigner -verbose \
+              -keystore "$KEYSTORE" \
+              -storepass:env KEY_STORE_PASSWORD \
+              -keypass:env KEY_PASSWORD \
+              "$AAB" "$ALIAS"
+          done
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
@@ -154,31 +178,51 @@ jobs:
       - name: Install fastlane
         run: gem install fastlane -v 2.240.1 --no-document
 
-      - name: Upload to the Play track
+      - name: Upload the watch bundles to the Wear OS track
         env:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           TRACK: ${{ inputs.track }}
-          AAB: ${{ steps.sign.outputs.bundleFile }}
+          IN: ${{ runner.temp }}/in
           METADATA: ${{ runner.temp }}/in/metadata
-          VERSION_CODE: ${{ needs.build.outputs.version_code }}
           VERSION_NAME: ${{ needs.build.outputs.version_name }}
+          WEAR_VERSION_CODE: ${{ needs.build.outputs.wear_version_code }}
+          WATCHFACE_VERSION_CODE: ${{ needs.build.outputs.watchface_version_code }}
         run: |
           if [ -z "$SUPPLY_JSON_KEY_DATA" ]; then
             echo "Error: PLAY_SERVICE_ACCOUNT_JSON secret is not set."
             exit 1
           fi
           if [ ! -d "$METADATA" ]; then
-            echo "Error: the listing metadata did not travel with the bundle."
+            echo "Error: the listing metadata did not travel with the bundles."
             exit 1
           fi
-          echo "Uploading versionCode $VERSION_CODE ($VERSION_NAME) to track $TRACK."
+          echo "Uploading $VERSION_NAME to $TRACK: watch face $WATCHFACE_VERSION_CODE and legacy $WEAR_VERSION_CODE."
           echo "Listing texts: $(find "$METADATA" -mindepth 2 -maxdepth 2 -name '*.txt' -type f | wc -l) files"
           echo "Screenshots: $(find "$METADATA" -path '*/images/wearScreenshots/*' -type f | wc -l) files"
           fastlane supply \
             --package_name com.thomaskuenneth.c64watchface \
-            --aab "$AAB" \
+            --aab_paths "$IN/watchface-release.aab,$IN/wear-release.aab" \
             --track "$TRACK" \
             --metadata_path "$METADATA"
+
+      - name: Upload the phone companion to its own track
+        env:
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ inputs.mobile_track }}
+          IN: ${{ runner.temp }}/in
+          METADATA: ${{ runner.temp }}/in/metadata
+          VERSION_NAME: ${{ needs.build.outputs.version_name }}
+          MOBILE_VERSION_CODE: ${{ needs.build.outputs.mobile_version_code }}
+        run: |
+          echo "Uploading $VERSION_NAME to $TRACK: phone companion $MOBILE_VERSION_CODE."
+          fastlane supply \
+            --package_name com.thomaskuenneth.c64watchface \
+            --aab "$IN/mobile-release.aab" \
+            --track "$TRACK" \
+            --metadata_path "$METADATA" \
+            --skip_upload_metadata true \
+            --skip_upload_images true \
+            --skip_upload_screenshots true
 
   cleanup:
     needs: [build, publish]

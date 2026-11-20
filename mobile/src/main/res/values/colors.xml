@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="c64_light_blue">#6C5EB5</color>
+    <color name="c64_blue">#352879</color>
+    <color name="ic_launcher_background">@color/c64_light_blue</color>
+</resources>

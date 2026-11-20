@@ -11,8 +11,8 @@ android {
         applicationId = "com.thomaskuenneth.c64watchface"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 14001
-        versionName = "1.4.0"
+        versionCode = project.findProperty("baseVersionCode").toString().toInt() * 10 + 3
+        versionName = project.findProperty("baseVersionName").toString()
     }
 
     lint {
@@ -20,6 +20,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = false
