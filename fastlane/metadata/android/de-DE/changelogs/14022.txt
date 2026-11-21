@@ -1,0 +1,7 @@
+- Neu umgesetzt im Watch Face Format, das Wear OS jetzt verlangt
+- Die drei Optionen liegen nun im Zifferblatt-Editor des Systems
+- Der Ambient-Modus zeigt die Zeit in Weiß auf Schwarz und stoppt den Cursor
+- Das Datum folgt der Reihenfolge deiner Sprache
+- Runde, quadratische und rechteckige Uhren bekommen ein eigenes Layout
+- Neue Schrift Pet Me 64, eine pixelgenaue Nachbildung des C64-Zeichensatzes
+- Der Cursor in der Handy-App blinkt wieder und die Uhrzeit läuft mit

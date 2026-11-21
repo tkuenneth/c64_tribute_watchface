@@ -39,6 +39,7 @@ androidComponents {
 
 dependencies {
     implementation(project(":mobile"))
+    implementation(project(":common"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.junit)

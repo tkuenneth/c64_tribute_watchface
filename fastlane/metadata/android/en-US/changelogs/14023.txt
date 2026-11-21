@@ -1,0 +1,6 @@
+- Rebuilt in the Watch Face Format, which Wear OS now requires
+- The three options moved into the system watch face editor
+- Ambient mode shows the time in white on black and stops the cursor
+- The date follows the order your language uses
+- Round, square and rectangular watches get their own layout
+- New font, Pet Me 64, a pixel-exact recreation of the C64 character set

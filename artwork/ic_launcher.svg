@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <rect id="background" x="0" y="0" width="108" height="108" fill="#6C5EB5"/>
+  <g id="foreground">
+    <rect id="screen" x="34" y="34" width="40" height="40" fill="#352879"/>
+    <rect id="cell1" x="39" y="44" width="8" height="8" fill="#6C5EB5"/>
+    <rect id="cell2" x="50" y="44" width="8" height="8" fill="#6C5EB5"/>
+    <rect id="cell3" x="61" y="44" width="8" height="8" fill="#6C5EB5"/>
+    <rect id="cursor" x="39" y="57" width="8" height="8" fill="#6C5EB5"/>
+  </g>
+</svg>

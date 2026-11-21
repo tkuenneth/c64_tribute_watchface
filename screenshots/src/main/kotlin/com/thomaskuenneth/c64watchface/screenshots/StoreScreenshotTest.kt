@@ -3,6 +3,9 @@ package com.thomaskuenneth.c64watchface.screenshots
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,7 +18,9 @@ import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
+import com.thomaskuenneth.c64watchface.C64WatchFace
 import com.thomaskuenneth.c64watchface.MainActivity
+import com.thomaskuenneth.common.C64
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -30,6 +35,7 @@ private const val HINT_ACKNOWLEDGED = "hint_acknowledged"
 private const val PREFS_DATE = "date"
 private const val PREFS_SECONDS = "seconds"
 private const val PREFS_UPPERCASE = "uppercase"
+private const val CURSOR_TIMEOUT_MILLIS = 5_000L
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -65,7 +71,7 @@ class StoreScreenshotTest {
         launchApp()
         File(outputDir, "device-class.txt").writeText(detectDeviceClass())
 
-        capture(0, "watchface")
+        captureLitFace(0, "watchface")
 
         clickDesc(labels.settings)
         awaitText(labels.appearance)
@@ -135,6 +141,48 @@ class StoreScreenshotTest {
                 .firstOrNull()
         }
         return found
+    }
+
+    private fun captureLitFace(index: Int, name: String) {
+        val view = watchFaceView()
+        val c64 = checkNotNull(view.tag as? C64) {
+            "The watch face preview carries no C64 to draw"
+        }
+        val drawn = CountDownLatch(1)
+        val onDraw = ViewTreeObserver.OnDrawListener { drawn.countDown() }
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            c64.cursorSteady = true
+            c64.c64CursorVisible = true
+            view.viewTreeObserver.addOnDrawListener(onDraw)
+            view.invalidate()
+        }
+        try {
+            check(drawn.await(CURSOR_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                "The watch face did not redraw with a steady cursor"
+            }
+            capture(index, name)
+        } finally {
+            instrumentation.runOnMainSync {
+                view.viewTreeObserver.removeOnDrawListener(onDraw)
+                c64.cursorSteady = false
+            }
+        }
+    }
+
+    private fun watchFaceView(): View {
+        val activity = checkNotNull(resumedActivity()) { "MainActivity was not resumed" }
+        return checkNotNull(findWatchFace(activity.window.decorView)) {
+            "The watch face preview is not in the view hierarchy"
+        }
+    }
+
+    private fun findWatchFace(view: View): C64WatchFace? = when {
+        view is C64WatchFace -> view
+        view is ViewGroup -> (0 until view.childCount).firstNotNullOfOrNull {
+            findWatchFace(view.getChildAt(it))
+        }
+        else -> null
     }
 
     private fun capture(index: Int, name: String) {

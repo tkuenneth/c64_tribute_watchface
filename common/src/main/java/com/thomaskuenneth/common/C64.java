@@ -45,6 +45,8 @@ public class C64 {
     // C64 cursor visible
     public boolean c64CursorVisible;
 
+    public boolean cursorSteady;
+
     public boolean isRound = false;
 
     public boolean centerHorizontally = true;
@@ -192,18 +194,23 @@ public class C64 {
     }
 
     public void pulse(Callable<Boolean> callback) {
-        new Timer().schedule(new TimerTask() {
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                c64CursorVisible = !c64CursorVisible;
+                if (!cursorSteady) {
+                    c64CursorVisible = !c64CursorVisible;
+                }
+                boolean again = false;
                 try {
-                    if (callback.call()) {
-                        pulse(callback);
-                    }
+                    again = callback.call();
                 } catch (Exception e) {
                     Log.e(TAG, "pulse()", e);
                 }
+                if (!again) {
+                    timer.cancel();
+                }
             }
-        }, INTERACTIVE_UPDATE_RATE_MS);
+        }, INTERACTIVE_UPDATE_RATE_MS, INTERACTIVE_UPDATE_RATE_MS);
     }
 }
