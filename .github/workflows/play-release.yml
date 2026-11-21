@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       track:
-        description: 'Wear OS track for the watch bundles'
+        description: 'Wear OS track for the watch face'
         type: string
         default: 'wear:internal'
       mobile_track:
@@ -31,7 +31,6 @@ jobs:
       contents: read
     outputs:
       version_name: ${{ steps.version_info.outputs.version_name }}
-      wear_version_code: ${{ steps.version_info.outputs.wear_version_code }}
       mobile_version_code: ${{ steps.version_info.outputs.mobile_version_code }}
       watchface_version_code: ${{ steps.version_info.outputs.watchface_version_code }}
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -81,19 +80,17 @@ jobs:
             exit 1
           fi
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "wear_version_code=$((BASE_CODE * 10 + 1))" >> "$GITHUB_OUTPUT"
           echo "mobile_version_code=$((BASE_CODE * 10 + 2))" >> "$GITHUB_OUTPUT"
           echo "watchface_version_code=$((BASE_CODE * 10 + 3))" >> "$GITHUB_OUTPUT"
 
       - name: Collect the unsigned bundles and the listing
         env:
           OUT: ${{ runner.temp }}/out
-          WEAR_VERSION_CODE: ${{ steps.version_info.outputs.wear_version_code }}
           MOBILE_VERSION_CODE: ${{ steps.version_info.outputs.mobile_version_code }}
           WATCHFACE_VERSION_CODE: ${{ steps.version_info.outputs.watchface_version_code }}
         run: |
           mkdir -p "$OUT"
-          for module in watchface wear mobile; do
+          for module in watchface mobile; do
             BUNDLE="$module/build/outputs/bundle/release/$module-release.aab"
             if [ ! -f "$BUNDLE" ]; then
               echo "Error: $BUNDLE was not built. Every form factor must ship in the release."
@@ -102,7 +99,7 @@ jobs:
             cp "$BUNDLE" "$OUT/$module-release.aab"
           done
           for LOCALE in fastlane/metadata/android/*/; do
-            for CODE in "$WEAR_VERSION_CODE" "$MOBILE_VERSION_CODE" "$WATCHFACE_VERSION_CODE"; do
+            for CODE in "$MOBILE_VERSION_CODE" "$WATCHFACE_VERSION_CODE"; do
               CHANGELOG_FILE="${LOCALE}changelogs/${CODE}.txt"
               if [ ! -f "$CHANGELOG_FILE" ]; then
                 echo "Error: $CHANGELOG_FILE is missing. Write the release notes before releasing."
@@ -157,7 +154,7 @@ jobs:
           trap 'rm -f "$KEYSTORE"' EXIT
           ( umask 077; printf '%s' "$SIGNING_KEY" | base64 -d > "$KEYSTORE" )
 
-          for module in watchface wear mobile; do
+          for module in watchface mobile; do
             AAB="$RUNNER_TEMP/in/$module-release.aab"
             if [ ! -f "$AAB" ]; then
               echo "Error: $AAB did not travel with the build job."
@@ -178,14 +175,13 @@ jobs:
       - name: Install fastlane
         run: gem install fastlane -v 2.240.1 --no-document
 
-      - name: Upload the watch bundles to the Wear OS track
+      - name: Upload the watch face to the Wear OS track
         env:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           TRACK: ${{ inputs.track }}
           IN: ${{ runner.temp }}/in
           METADATA: ${{ runner.temp }}/in/metadata
           VERSION_NAME: ${{ needs.build.outputs.version_name }}
-          WEAR_VERSION_CODE: ${{ needs.build.outputs.wear_version_code }}
           WATCHFACE_VERSION_CODE: ${{ needs.build.outputs.watchface_version_code }}
         run: |
           if [ -z "$SUPPLY_JSON_KEY_DATA" ]; then
@@ -196,12 +192,12 @@ jobs:
             echo "Error: the listing metadata did not travel with the bundles."
             exit 1
           fi
-          echo "Uploading $VERSION_NAME to $TRACK: watch face $WATCHFACE_VERSION_CODE and legacy $WEAR_VERSION_CODE."
+          echo "Uploading $VERSION_NAME to $TRACK: watch face $WATCHFACE_VERSION_CODE."
           echo "Listing texts: $(find "$METADATA" -mindepth 2 -maxdepth 2 -name '*.txt' -type f | wc -l) files"
           echo "Screenshots: $(find "$METADATA" -path '*/images/wearScreenshots/*' -type f | wc -l) files"
           fastlane supply \
             --package_name com.thomaskuenneth.c64watchface \
-            --aab_paths "$IN/watchface-release.aab,$IN/wear-release.aab" \
+            --aab "$IN/watchface-release.aab" \
             --track "$TRACK" \
             --metadata_path "$METADATA"
 

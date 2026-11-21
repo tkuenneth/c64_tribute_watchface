@@ -80,6 +80,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.preference.PreferenceManager
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
@@ -198,15 +199,28 @@ fun WatchFaceScreen(
                     showTopBar = !showTopBar
                 }
         ) {
-            AndroidView(
-                factory = { context ->
-                    C64WatchFace(context).apply {
-                        val c64 = C64(context, sharedPreferences)
-                        c64.centerHorizontally = false
-                        c64.setup()
-                        tag = c64
+            val context = LocalContext.current
+            val c64 = remember {
+                C64(context, sharedPreferences).apply {
+                    centerHorizontally = false
+                    setup()
+                }
+            }
+            val watchFace = remember { C64WatchFace(context).apply { tag = c64 } }
+
+            LifecycleResumeEffect(c64) {
+                var blinking = true
+                c64.pulse {
+                    if (blinking) {
+                        watchFace.postInvalidate()
                     }
-                },
+                    blinking
+                }
+                onPauseOrDispose { blinking = false }
+            }
+
+            AndroidView(
+                factory = { watchFace },
                 modifier = Modifier.fillMaxSize(),
                 update = { view ->
                     (view.tag as? C64)?.last = -1f
