@@ -118,7 +118,7 @@ def write_store_icon(viewport, rects):
     try:
         subprocess.run(["magick", "-background", "none",
                         "-size", "%dx%d" % (STORE_PX, STORE_PX),
-                        scratch, "PNG32:" + STORE_PNG], check=True)
+                        scratch, "-strip", "PNG32:" + STORE_PNG], check=True)
     finally:
         os.remove(scratch)
     print("wrote %s" % os.path.relpath(STORE_PNG, ROOT).replace(os.sep, "/"))
