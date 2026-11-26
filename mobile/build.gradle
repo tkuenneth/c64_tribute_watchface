@@ -107,3 +107,10 @@ dependencies {
     implementation libs.material
     implementation libs.androidx.preference.ktx
 }
+
+tasks.withType(Test).configureEach {
+    inputs.files(fileTree("../watchface/src/main/res/raw"),
+            fileTree(dir: "../watchface/src/main/res", includes: ["values*/strings.xml"]))
+            .withPropertyName("watchFaceResources")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+}

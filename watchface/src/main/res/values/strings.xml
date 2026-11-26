@@ -1,8 +1,22 @@
 <resources>
 
     <string name="app_name" translatable="false">C64 Tribute Watch Face</string>
-    <string name="config_seconds">seconds</string>
-    <string name="config_date">date</string>
-    <string name="config_uppercase">uppercase only</string>
 
+    <string name="config_seconds">Seconds</string>
+    <string name="config_seconds_show">Show seconds</string>
+    <string name="config_seconds_hide">Hide seconds</string>
+    <string name="config_date">Date</string>
+    <string name="config_date_show">Show date</string>
+    <string name="config_date_hide">Hide date</string>
+    <string name="config_uppercase">Capitals</string>
+    <string name="config_uppercase_only">Capitals only</string>
+    <string name="config_uppercase_mixed">Upper and lower case</string>
+
+    <string name="weekday_1">Sun</string>
+    <string name="weekday_2">Mon</string>
+    <string name="weekday_3">Tue</string>
+    <string name="weekday_4">Wed</string>
+    <string name="weekday_5">Thu</string>
+    <string name="weekday_6">Fri</string>
+    <string name="weekday_7">Sat</string>
 </resources>

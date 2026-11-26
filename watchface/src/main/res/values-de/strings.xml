@@ -1,7 +1,20 @@
 <resources>
 
     <string name="config_seconds">Sekunden</string>
+    <string name="config_seconds_show">Sekunden anzeigen</string>
+    <string name="config_seconds_hide">Sekunden ausblenden</string>
     <string name="config_date">Datum</string>
-    <string name="config_uppercase">nur Großbuchstaben</string>
+    <string name="config_date_show">Datum anzeigen</string>
+    <string name="config_date_hide">Datum ausblenden</string>
+    <string name="config_uppercase">Großbuchstaben</string>
+    <string name="config_uppercase_only">Nur Großbuchstaben</string>
+    <string name="config_uppercase_mixed">Groß- u. Kleinbuchstaben</string>
 
+    <string name="weekday_1">So</string>
+    <string name="weekday_2">Mo</string>
+    <string name="weekday_3">Di</string>
+    <string name="weekday_4">Mi</string>
+    <string name="weekday_5">Do</string>
+    <string name="weekday_6">Fr</string>
+    <string name="weekday_7">Sa</string>
 </resources>
