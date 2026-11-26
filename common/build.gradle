@@ -42,4 +42,31 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+    androidTestImplementation libs.androidx.test.uiautomator
+}
+
+def wearScreenshotOutput = layout.buildDirectory
+        .dir("outputs/connected_android_test_additional_output/debugAndroidTest/connected")
+
+tasks.register("cleanWearScreenshotOutput", Delete) {
+    group = "screenshots"
+    description = "Removes screenshots pulled from an earlier capture, so only this run is copied."
+    delete wearScreenshotOutput
+}
+
+tasks.matching { it.name == "connectedDebugAndroidTest" }.configureEach {
+    mustRunAfter "cleanWearScreenshotOutput"
+}
+
+tasks.register("captureWearScreenshots", Copy) {
+    group = "screenshots"
+    description = "Captures the Wear store screenshots on the round emulator ANDROID_SERIAL names " +
+            "and copies them into fastlane/metadata."
+    dependsOn "cleanWearScreenshotOutput", ":watchface:installDebug", "connectedDebugAndroidTest"
+    from(wearScreenshotOutput) {
+        include "**/wear-store-screenshots/*.png"
+        eachFile { it.path = it.name }
+        includeEmptyDirs = false
+    }
+    into "${rootDir}/fastlane/metadata/android/en-US/images/wearScreenshots"
 }
