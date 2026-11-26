@@ -1,11 +1,9 @@
 package com.thomaskuenneth.c64watchface
 
-import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -16,13 +14,13 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +28,7 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -37,11 +36,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -58,49 +56,56 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.preference.PreferenceManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 import com.mikepenz.aboutlibraries.ui.compose.m3.style.m3VariantColors
 import com.thomaskuenneth.common.C64
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
-
-    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         setContent {
             AppTheme {
-                MainAppScreen(sharedPreferences = sharedPreferences)
+                MainAppScreen()
             }
         }
     }
@@ -127,41 +132,58 @@ fun AppTheme(
     )
 }
 
+@Serializable
+data object WatchFaceRoute : NavKey
+
+@Serializable
+data object SettingsRoute : NavKey
+
+@Serializable
+data object InfoRoute : NavKey
+
 @Composable
-fun MainAppScreen(sharedPreferences: SharedPreferences) {
-    var currentScreen by rememberSaveable { mutableStateOf(Screen.Main) }
+fun MainAppScreen(viewModel: WatchFaceViewModel = viewModel()) {
+    val backStack = rememberNavBackStack(WatchFaceRoute)
 
-    BackHandler(enabled = currentScreen != Screen.Main) {
-        currentScreen = Screen.Main
-    }
-
-    when (currentScreen) {
-        Screen.Main -> WatchFaceScreen(
-            sharedPreferences = sharedPreferences,
-            onNavigateSettings = { currentScreen = Screen.Settings },
-            onNavigateInfo = { currentScreen = Screen.Info }
-        )
-        Screen.Settings -> SettingsScreen(
-            sharedPreferences = sharedPreferences,
-            onBack = { currentScreen = Screen.Main }
-        )
-        Screen.Info -> InfoScreen(
-            onBack = { currentScreen = Screen.Main }
-        )
-    }
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<WatchFaceRoute> {
+                val settings by viewModel.settings.collectAsStateWithLifecycle()
+                WatchFaceScreen(
+                    c64 = viewModel.c64,
+                    hintAcknowledged = settings.hintAcknowledged,
+                    onHintAcknowledged = viewModel::acknowledgeHint,
+                    onNavigateSettings = dropUnlessResumed { backStack.add(SettingsRoute) },
+                    onNavigateInfo = dropUnlessResumed { backStack.add(InfoRoute) }
+                )
+            }
+            entry<SettingsRoute> {
+                val settings by viewModel.settings.collectAsStateWithLifecycle()
+                SettingsScreen(
+                    settings = settings,
+                    onDate = viewModel::setDate,
+                    onSeconds = viewModel::setSeconds,
+                    onUppercase = viewModel::setUppercase,
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
+            entry<InfoRoute> {
+                InfoScreen(
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
+        }
+    )
 }
-
-enum class Screen {
-    Main, Settings, Info
-}
-
-private const val PREFS_HINT_ACKNOWLEDGED = "hint_acknowledged"
 
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchFaceScreen(
-    sharedPreferences: SharedPreferences,
+    c64: C64,
+    hintAcknowledged: Boolean,
+    onHintAcknowledged: () -> Unit,
     onNavigateSettings: () -> Unit,
     onNavigateInfo: () -> Unit
 ) {
@@ -170,15 +192,15 @@ fun WatchFaceScreen(
     val hintMessage = stringResource(R.string.toast_toggle_fullscreen)
     val hintAction = stringResource(R.string.got_it)
 
-    LaunchedEffect(Unit) {
-        if (!sharedPreferences.getBoolean(PREFS_HINT_ACKNOWLEDGED, false)) {
+    LaunchedEffect(hintAcknowledged) {
+        if (!hintAcknowledged) {
             val result = snackbarHostState.showSnackbar(
                 message = hintMessage,
                 actionLabel = hintAction,
                 duration = SnackbarDuration.Indefinite
             )
             if (result == SnackbarResult.ActionPerformed) {
-                sharedPreferences.edit { putBoolean(PREFS_HINT_ACKNOWLEDGED, true) }
+                onHintAcknowledged()
             }
         }
     }
@@ -193,37 +215,34 @@ fun WatchFaceScreen(
                 .fillMaxSize()
                 .background(Color.Black)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = null,
                     indication = null
                 ) {
                     showTopBar = !showTopBar
                 }
         ) {
             val context = LocalContext.current
-            val c64 = remember {
-                C64(context, sharedPreferences).apply {
-                    centerHorizontally = false
-                    setup()
-                }
-            }
-            val watchFace = remember { C64WatchFace(context).apply { tag = c64 } }
+            val watchFace = remember(c64, context) { C64WatchFace(context).apply { data = c64 } }
 
-            LifecycleResumeEffect(c64) {
+            LifecycleResumeEffect(c64, watchFace) {
                 var blinking = true
                 c64.pulse {
-                    if (blinking) {
+                    if (blinking && watchFace.isAttachedToWindow) {
                         watchFace.postInvalidate()
                     }
                     blinking
                 }
-                onPauseOrDispose { blinking = false }
+                onPauseOrDispose {
+                    blinking = false
+                    c64.stopPulse()
+                }
             }
 
             AndroidView(
                 factory = { watchFace },
                 modifier = Modifier.fillMaxSize(),
                 update = { view ->
-                    (view.tag as? C64)?.last = -1f
+                    view.data?.last = -1f
                     view.invalidate()
                 }
             )
@@ -261,9 +280,14 @@ fun WatchFaceScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(sharedPreferences: SharedPreferences, onBack: () -> Unit) {
+fun SettingsScreen(
+    settings: WatchFaceSettings,
+    onDate: (Boolean) -> Unit,
+    onSeconds: (Boolean) -> Unit,
+    onUppercase: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -284,6 +308,7 @@ fun SettingsScreen(sharedPreferences: SharedPreferences, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Text(
@@ -295,51 +320,34 @@ fun SettingsScreen(sharedPreferences: SharedPreferences, onBack: () -> Unit) {
 
             PreferenceSwitch(
                 title = stringResource(R.string.date),
-                key = "date",
-                sharedPreferences = sharedPreferences
+                checked = settings.date,
+                onCheckedChange = onDate
             )
             PreferenceSwitch(
                 title = stringResource(R.string.seconds),
-                key = "seconds",
-                sharedPreferences = sharedPreferences
+                checked = settings.seconds,
+                onCheckedChange = onSeconds
             )
             PreferenceSwitch(
                 title = stringResource(R.string.uppercase),
-                key = "uppercase",
-                sharedPreferences = sharedPreferences
+                checked = settings.uppercase,
+                onCheckedChange = onUppercase
             )
         }
     }
 }
 
 @Composable
-private fun rememberPreference(sharedPreferences: SharedPreferences, key: String): Boolean {
-    var value by remember(sharedPreferences, key) {
-        mutableStateOf(sharedPreferences.getBoolean(key, false))
-    }
-    DisposableEffect(sharedPreferences, key) {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { preferences, changed ->
-            if (changed == key) {
-                value = preferences.getBoolean(key, false)
-            }
-        }
-        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-    return value
-}
-
-@Composable
-fun PreferenceSwitch(title: String, key: String, sharedPreferences: SharedPreferences) {
-    val isChecked = rememberPreference(sharedPreferences, key)
-
+fun PreferenceSwitch(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                sharedPreferences.edit { putBoolean(key, !isChecked) }
-            }
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            )
             .padding(vertical = 12.dp)
     ) {
         Text(
@@ -349,13 +357,12 @@ fun PreferenceSwitch(title: String, key: String, sharedPreferences: SharedPrefer
         )
         Spacer(modifier = Modifier.width(16.dp))
         Switch(
-            checked = isChecked,
-            onCheckedChange = { sharedPreferences.edit { putBoolean(key, it) } }
+            checked = checked,
+            onCheckedChange = null
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoScreen(onBack: () -> Unit) {
     var showLicenseDialog by rememberSaveable { mutableStateOf(false) }
@@ -377,9 +384,11 @@ fun InfoScreen(onBack: () -> Unit) {
             }
         }
     }
-    val appIcon = remember(context) {
-        context.packageManager.getApplicationIcon(context.applicationInfo).toBitmap()
-            .asImageBitmap()
+    val appIcon by produceState<ImageBitmap?>(initialValue = null, context) {
+        value = withContext(Dispatchers.IO) {
+            context.packageManager.getApplicationIcon(context.applicationInfo).toBitmap()
+                .asImageBitmap()
+        }
     }
 
     if (showOpenSourceLicenses) {
@@ -414,8 +423,10 @@ fun InfoScreen(onBack: () -> Unit) {
 
     if (showLicenseDialog) {
         val resources = LocalResources.current
-        val licenseText = remember(resources) {
-            resources.openRawResource(R.raw.font_license).bufferedReader().use { it.readText() }
+        val licenseText by produceState("", resources) {
+            value = withContext(Dispatchers.IO) {
+                resources.openRawResource(R.raw.font_license).bufferedReader().use { it.readText() }
+            }
         }
         AlertDialog(
             onDismissRequest = { showLicenseDialog = false },
@@ -455,15 +466,18 @@ fun InfoScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                bitmap = appIcon,
-                contentDescription = stringResource(R.string.app_name),
-                modifier = Modifier.size(72.dp)
-            )
+            appIcon?.let { icon ->
+                Image(
+                    bitmap = icon,
+                    contentDescription = stringResource(R.string.app_name),
+                    modifier = Modifier.size(72.dp)
+                )
+            }
 
             Text(
                 text = stringResource(
@@ -528,23 +542,23 @@ fun InfoScreen(onBack: () -> Unit) {
                 modifier = Modifier.padding(top = 8.dp)
             )
 
-            OutlinedButton(
-                onClick = { safeUriHandler.openUri(sourceCodeUrl) },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text(stringResource(R.string.source_code))
-            }
-
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = { showOpenSourceLicenses = true },
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text(stringResource(R.string.open_source_licenses))
             }
 
-            OutlinedButton(
+            TextButton(
+                onClick = { safeUriHandler.openUri(sourceCodeUrl) },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text(stringResource(R.string.source_code))
+            }
+
+            TextButton(
                 onClick = { showLicenseDialog = true },
-                modifier = Modifier.padding(top = 16.dp)
+                modifier = Modifier.padding(top = 8.dp)
             ) {
                 Text(stringResource(R.string.view_license))
             }

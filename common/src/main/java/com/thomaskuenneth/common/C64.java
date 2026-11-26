@@ -47,6 +47,8 @@ public class C64 {
 
     public boolean cursorSteady;
 
+    private volatile Timer pulseTimer;
+
     public boolean isRound = false;
 
     public boolean centerHorizontally = true;
@@ -194,7 +196,9 @@ public class C64 {
     }
 
     public void pulse(Callable<Boolean> callback) {
+        stopPulse();
         Timer timer = new Timer();
+        pulseTimer = timer;
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -209,8 +213,19 @@ public class C64 {
                 }
                 if (!again) {
                     timer.cancel();
+                    if (pulseTimer == timer) {
+                        pulseTimer = null;
+                    }
                 }
             }
         }, INTERACTIVE_UPDATE_RATE_MS, INTERACTIVE_UPDATE_RATE_MS);
+    }
+
+    public void stopPulse() {
+        Timer running = pulseTimer;
+        pulseTimer = null;
+        if (running != null) {
+            running.cancel();
+        }
     }
 }

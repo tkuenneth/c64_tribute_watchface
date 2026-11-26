@@ -145,7 +145,7 @@ class StoreScreenshotTest {
 
     private fun captureLitFace(index: Int, name: String) {
         val view = watchFaceView()
-        val c64 = checkNotNull(view.tag as? C64) {
+        val c64 = checkNotNull(view.data) {
             "The watch face preview carries no C64 to draw"
         }
         val drawn = CountDownLatch(1)
@@ -170,7 +170,7 @@ class StoreScreenshotTest {
         }
     }
 
-    private fun watchFaceView(): View {
+    private fun watchFaceView(): C64WatchFace {
         val activity = checkNotNull(resumedActivity()) { "MainActivity was not resumed" }
         return checkNotNull(findWatchFace(activity.window.decorView)) {
             "The watch face preview is not in the view hierarchy"

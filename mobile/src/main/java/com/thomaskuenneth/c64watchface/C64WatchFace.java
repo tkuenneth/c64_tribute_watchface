@@ -17,6 +17,8 @@ public class C64WatchFace extends View {
 
     private final Rect bounds;
 
+    private C64 data;
+
     public C64WatchFace(Context context) {
         super(context);
         bounds = new Rect();
@@ -32,7 +34,6 @@ public class C64WatchFace extends View {
             Insets cutout = insets.getInsets(
                     WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars()
             );
-            C64 data = (C64) getTag();
             if (data != null) {
                 data.insetLeft = cutout.left;
                 data.insetTop = cutout.top;
@@ -44,10 +45,13 @@ public class C64WatchFace extends View {
         });
     }
 
-    @Override
-    public void setTag(Object tag) {
-        super.setTag(tag);
+    public void setData(C64 data) {
+        this.data = data;
         ViewCompat.requestApplyInsets(this);
+    }
+
+    public C64 getData() {
+        return data;
     }
 
     @Override
@@ -65,7 +69,6 @@ public class C64WatchFace extends View {
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
-        C64 data = (C64) getTag();
         if (data != null) {
             data.draw(canvas, bounds, false);
         }

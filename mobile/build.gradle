@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
+    alias libs.plugins.kotlin.serialization
     alias libs.plugins.aboutLibraries.android
 }
 
@@ -80,6 +81,10 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.runtime.ktx
     implementation libs.androidx.lifecycle.runtime.compose
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.navigation3.runtime
+    implementation libs.androidx.navigation3.ui
+    implementation libs.kotlinx.serialization.core
     implementation libs.androidx.activity.compose
 
     def composeBom = platform(libs.androidx.compose.bom)

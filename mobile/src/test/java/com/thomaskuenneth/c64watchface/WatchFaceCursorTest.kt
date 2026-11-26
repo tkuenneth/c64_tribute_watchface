@@ -47,11 +47,16 @@ class WatchFaceCursorTest {
 
     private fun showWatchFace(): C64 {
         val preferences = PreferenceManager.getDefaultSharedPreferences(composeTestRule.activity)
-        preferences.edit { putBoolean("hint_acknowledged", true) }
+        val c64 = C64(composeTestRule.activity, preferences).apply {
+            centerHorizontally = false
+            setup()
+        }
         composeTestRule.setContent {
             if (watchFaceVisible) {
                 WatchFaceScreen(
-                    sharedPreferences = preferences,
+                    c64 = c64,
+                    hintAcknowledged = true,
+                    onHintAcknowledged = {},
                     onNavigateSettings = {},
                     onNavigateInfo = {}
                 )
@@ -61,7 +66,7 @@ class WatchFaceCursorTest {
         val view = checkNotNull(findWatchFace(composeTestRule.activity.window.decorView)) {
             "The watch face preview is not in the view hierarchy"
         }
-        return checkNotNull(view.tag as? C64) {
+        return checkNotNull(view.data) {
             "The watch face preview carries no C64 to draw"
         }
     }
