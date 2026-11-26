@@ -12,7 +12,8 @@ be given at startup such as -camera-back. HIDE_ERROR_DIALOGS=1 keeps the system'
 dialogs off the screen while the command runs, which matters when it captures screenshots.
 Every emulator starts in its natural orientation: the virtual accelerometer is reset to upright and
 any rotation lock a previous run left behind is cleared, because a sideways display has no matching
-skin and fails a screenshot run.
+skin and fails a screenshot run. Its text returns to font_scale 1.0 for the same reason: a scale a
+previous run left behind silently reflows and truncates every screenshot.
 Every emulator this script boots gets a quiet status bar: SystemUI demo mode with a fixed clock
 (DEMO_CLOCK, default 1200), a full battery and a full wifi icon, no mobile or notification icons,
 Safety Center's data cleared and everything already posted snoozed. DEMO_MODE=0 leaves the bars
@@ -91,6 +92,10 @@ is_upright() {
     grep -oE 'mRotation=[0-9]' | head -1 | tr -d '\r')" = mRotation=0 ]
 }
 
+default_text_size() {
+  "$ADB" -s "$SERIAL" shell settings put system font_scale 1.0 >/dev/null 2>&1 || true
+}
+
 quiet_status_bar() {
   "$ADB" -s "$SERIAL" shell settings put global sysui_demo_allowed 1 >/dev/null 2>&1 || true
   demo enter
@@ -147,6 +152,7 @@ if [ "${HIDE_ERROR_DIALOGS:-}" = 1 ]; then
 fi
 natural_orientation
 wait_for "returning to its natural orientation" is_upright || exit 1
+default_text_size
 if [ "${DEMO_MODE:-1}" = 1 ]; then
   quiet_status_bar
 fi

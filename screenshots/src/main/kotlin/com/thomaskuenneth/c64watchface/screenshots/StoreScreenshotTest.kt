@@ -12,6 +12,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter
@@ -21,6 +22,8 @@ import androidx.window.layout.WindowLayoutInfo
 import com.thomaskuenneth.c64watchface.C64WatchFace
 import com.thomaskuenneth.c64watchface.MainActivity
 import com.thomaskuenneth.common.C64
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -44,12 +47,16 @@ class StoreScreenshotTest {
     @get:Rule(order = 0)
     val storeStateRule = object : ExternalResource() {
         override fun before() {
+            outputDir.deleteRecursively()
+            outputDir.mkdirs()
             device().executeShellCommand("cmd uimode night yes")
+            unplugTheCharger()
             seedStoreState()
         }
 
         override fun after() {
             device().executeShellCommand("cmd uimode night no")
+            device().executeShellCommand("dumpsys battery reset")
         }
     }
 
@@ -57,16 +64,17 @@ class StoreScreenshotTest {
     private val targetContext: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private lateinit var outputDir: File
+    private val outputDir = File(
+        InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")
+            ?: InstrumentationRegistry.getInstrumentation().targetContext
+                .getExternalFilesDir(null)?.absolutePath.orEmpty(),
+        "store-screenshots",
+    )
     private lateinit var labels: UiLabels
 
     @Test
     fun captureStoreScreenshots() {
         labels = targetUiLabels(targetContext)
-        outputDir = File(targetContext.getExternalFilesDir(null), "store-screenshots").apply {
-            deleteRecursively()
-            mkdirs()
-        }
 
         launchApp()
         File(outputDir, "device-class.txt").writeText(detectDeviceClass())
@@ -75,15 +83,54 @@ class StoreScreenshotTest {
 
         clickDesc(labels.settings)
         awaitText(labels.appearance)
+        awaitGone(By.desc(labels.info))
         capture(1, "settings")
         uiDevice.pressBack()
         awaitDesc(labels.settings)
+        awaitGone(By.text(labels.appearance))
 
         clickDesc(labels.info)
         awaitText(labels.fontAttribution)
+        awaitGone(By.desc(labels.settings))
         capture(2, "about")
         uiDevice.pressBack()
         awaitDesc(labels.settings)
+        awaitGone(By.text(labels.fontAttribution))
+
+        assertEquals(
+            listOf("00_watchface.png", "01_settings.png", "02_about.png", "device-class.txt"),
+            outputDir.listFiles().orEmpty().map { it.name }.sorted(),
+        )
+    }
+
+    private fun unplugTheCharger() {
+        device().executeShellCommand("dumpsys battery unplug")
+        device().executeShellCommand("dumpsys battery set level 100")
+    }
+
+    private fun readFontScale(): String? = uiDevice
+        .executeShellCommand("settings get system font_scale")
+        .trim()
+        .takeIf { it.isNotEmpty() && it != "null" }
+
+    private fun assertDefaultTextSize() {
+        val scale = readFontScale() ?: return
+        assertEquals(
+            "the device draws text at font scale $scale, which reflows and truncates every shot. " +
+                "with_avd.sh resets it at boot; reset it with " +
+                "'adb shell settings put system font_scale 1.0'",
+            1.0f,
+            scale.toFloat(),
+            0.001f,
+        )
+    }
+
+    private fun assertNoChargingIndicator() {
+        val battery = uiDevice.executeShellCommand("dumpsys battery")
+        assertTrue(
+            "the device reports itself as charging, which puts a power symbol in the status bar",
+            battery.contains("AC powered: false") && battery.contains("USB powered: false"),
+        )
     }
 
     private fun launchApp() {
@@ -126,8 +173,16 @@ class StoreScreenshotTest {
             adapter.removeWindowLayoutInfoListener(consumer)
         }
         val layoutInfo = seen.get()
+        val folds = layoutInfo?.displayFeatures.orEmpty().filterIsInstance<FoldingFeature>()
         return when {
-            layoutInfo?.displayFeatures.orEmpty().any { it is FoldingFeature } -> "fold"
+            folds.isNotEmpty() -> {
+                assertEquals(
+                    "the foldable is not open, so this is the cover display, not the inner one",
+                    FoldingFeature.State.FLAT,
+                    folds.first().state,
+                )
+                "fold"
+            }
             current.resources.configuration.smallestScreenWidthDp >= 600 -> "tablet"
             else -> "phone"
         }
@@ -187,6 +242,8 @@ class StoreScreenshotTest {
 
     private fun capture(index: Int, name: String) {
         uiDevice.waitForIdle()
+        assertNoChargingIndicator()
+        assertDefaultTextSize()
         uiDevice.takeScreenshot(File(outputDir, "%02d_%s.png".format(index, name)))
     }
 
@@ -200,6 +257,13 @@ class StoreScreenshotTest {
         uiDevice.findObjects(By.pkg(targetContext.packageName))
             .mapNotNull { it.text }
             .filter { it.isNotBlank() }
+
+    private fun awaitGone(selector: BySelector, timeoutMs: Long = 5_000) {
+        check(uiDevice.wait(Until.gone(selector), timeoutMs)) {
+            "The previous destination is still on screen after $timeoutMs ms, so the capture " +
+                "would catch the transition between them: $selector"
+        }
+    }
 
     private fun awaitDesc(desc: String, timeoutMs: Long = 5_000) {
         check(uiDevice.wait(Until.hasObject(By.desc(desc)), timeoutMs)) {

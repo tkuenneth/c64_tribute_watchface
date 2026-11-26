@@ -105,15 +105,62 @@ tasks.register("generateStoreScreenshots") {
     }
 }
 
+val storeScreenshotOutput = layout.buildDirectory
+    .dir("outputs/connected_android_test_additional_output")
+
+tasks.register<Delete>("cleanStoreScreenshotOutput") {
+    group = "screenshots"
+    description = "Removes screenshots pulled from an earlier capture, so only this run is framed."
+    delete(storeScreenshotOutput)
+}
+
+tasks.register("prepareStoreScreenshotDevice") {
+    group = "screenshots"
+    description = "Opens the foldable and checks that ImageMagick can convert the emulator skins, " +
+        "before the capture spends time on the device."
+
+    val rootDirectory = project.rootDir
+    val resolvedBash = bashExecutable
+    val bashMissing = missingBash
+
+    doLast {
+        val bash = resolvedBash ?: throw GradleException(bashMissing)
+        val magickProbe = ProcessBuilder(bash, "-lc", "command -v magick")
+            .redirectErrorStream(true).start()
+        check(magickProbe.waitFor() == 0) {
+            "ImageMagick is not on the PATH. Framing converts the emulator skins with its " +
+                "'magick' command - install it (winget install ImageMagick.ImageMagick) and " +
+                "run this task again."
+        }
+        val foldableScript = File(rootDirectory, "scripts/open_foldable.sh")
+        check(foldableScript.isFile) { "Missing scripts/open_foldable.sh in ${rootDirectory.name}" }
+        val process = ProcessBuilder(bash, foldableScript.absolutePath.replace('\\', '/'))
+            .redirectErrorStream(true).start()
+        val output = process.inputStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Opening the foldable failed (exit $exitCode):\n$output")
+        }
+    }
+}
+
+tasks.matching { it.name == "connectedScreenshotsAndroidTest" }.configureEach {
+    mustRunAfter("cleanStoreScreenshotOutput", "prepareStoreScreenshotDevice")
+}
+
 tasks.register("captureStoreScreenshots") {
     group = "screenshots"
     description = "Captures and frames store screenshots on the emulator ANDROID_SERIAL names " +
         "(generateStoreScreenshots starts the emulators). The device class is detected from " +
         "the device's own screen."
-    dependsOn(":mobile:installScreenshots", "installScreenshots")
+    dependsOn(
+        "cleanStoreScreenshotOutput",
+        "prepareStoreScreenshotDevice",
+        "connectedScreenshotsAndroidTest"
+    )
 
     val rootDirectory = project.rootDir
-    val rawDirectory = layout.buildDirectory.dir("store-screenshots/raw").get().asFile
+    val rawDirectory = storeScreenshotOutput.get().asFile
     val sequence = storeScreenshotSequence
     val resolvedBash = bashExecutable
     val bashMissing = missingBash
@@ -132,16 +179,6 @@ tasks.register("captureStoreScreenshots") {
                 )
             }
             return output
-        }
-
-        val foldableScript = File(rootDirectory, "scripts/open_foldable.sh")
-        check(foldableScript.isFile) { "Missing scripts/open_foldable.sh in ${rootDirectory.name}" }
-        val magickProbe = ProcessBuilder(bash, "-lc", "command -v magick")
-            .redirectErrorStream(true).start()
-        check(magickProbe.waitFor() == 0) {
-            "ImageMagick is not on the PATH. Framing converts the emulator skins with its " +
-                "'magick' command - install it (winget install ImageMagick.ImageMagick) and " +
-                "run this task again."
         }
 
         fun parseSkinLayout(layoutFile: File): IntArray {
@@ -221,35 +258,13 @@ tasks.register("captureStoreScreenshots") {
             ?: throw GradleException("Set ANDROID_HOME (or ANDROID_SDK_ROOT) to your Android SDK location")
         val adbName = if (onWindows) "adb.exe" else "adb"
         val adb = File(sdkDir, "platform-tools/$adbName").absolutePath
-        val appId = "com.thomaskuenneth.c64watchface"
-        val testAppId = "com.thomaskuenneth.c64watchface.screenshots"
-        val runner = "androidx.test.runner.AndroidJUnitRunner"
 
-        runCommand(bash, foldableScript.absolutePath.replace('\\', '/'))
-
-        runCommand(adb, "shell", "pm", "clear", appId)
-
-        val instrumentOutput = runCommand(
-            adb, "shell", "am", "instrument", "-w",
-            "-e", "class", "com.thomaskuenneth.c64watchface.screenshots.StoreScreenshotTest",
-            "$testAppId/$runner"
-        )
-        if (!instrumentOutput.contains("OK (")) {
-            throw GradleException("StoreScreenshotTest did not pass:\n$instrumentOutput")
-        }
-
-        rawDirectory.deleteRecursively()
-        rawDirectory.mkdirs()
-        runCommand(
-            adb, "pull",
-            "/sdcard/Android/data/$appId/files/store-screenshots/.",
-            rawDirectory.absolutePath
-        )
-
-        val rawFiles = rawDirectory.listFiles()?.toList().orEmpty()
+        val rawFiles = rawDirectory.walkTopDown()
+            .filter { it.isFile && it.parentFile.name == "store-screenshots" }
+            .toList()
         check(rawFiles.isNotEmpty()) {
             "No screenshots found under ${rawDirectory.relativeTo(rootDirectory)} - " +
-                "did StoreScreenshotTest run?"
+                "did connectedScreenshotsAndroidTest run on one device?"
         }
 
         val deviceClassFile = rawFiles.firstOrNull { it.name == "device-class.txt" }
