@@ -1,10 +1,10 @@
-C64 Tribute Watch Face shows the time in the colors and the character set of the Commodore 64: light blue on blue, inside the border that framed the screen in 1982.
+C64 Tribute WatchFace shows the time in the colors and the character set of the Commodore 64: light blue on blue, inside the border that framed the screen in 1982.
 
 The time follows your watch's 12 or 24 hour setting. Three options decide what else appears:
 
 - seconds
 - date, as the short weekday and the day of the month
-- uppercase only, the way the C64 printed text by default
+- capitals only, the way the C64 printed text by default
 
 Under the last line sits a blinking block cursor. It blinks at the rate the Commodore 64 used: its KERNAL reloaded the counter with 20 and the timer ran at about 60 Hz, which is one phase every 333 milliseconds.
 
@@ -19,4 +19,4 @@ Round, square and rectangular watches each get a layout of their own.
 
 Source code: https://github.com/tkuenneth/c64_tribute_watchface
 
-C64 Tribute Watch Face is licensed under the GNU General Public License Version 3. It uses the Pet Me 64 font by Rebecca G. Bettencourt, Kreative Software, under the Kreative Software Relay Fonts Free Use License.
+C64 Tribute WatchFace is licensed under the GNU General Public License Version 3. It uses the Pet Me 64 font by Rebecca G. Bettencourt, Kreative Software, under the Kreative Software Relay Fonts Free Use License.

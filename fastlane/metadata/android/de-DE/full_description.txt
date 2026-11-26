@@ -1,4 +1,4 @@
-C64 Tribute Watch Face zeigt die Zeit in den Farben und im Zeichensatz des Commodore 64: Hellblau auf Blau, umgeben von dem Rahmen, der 1982 den Bildschirm einfasste.
+C64 Tribute WatchFace zeigt die Zeit in den Farben und im Zeichensatz des Commodore 64: Hellblau auf Blau, umgeben von dem Rahmen, der 1982 den Bildschirm einfasste.
 
 Die Zeit folgt der 12- oder 24-Stunden-Einstellung deiner Uhr. Drei Optionen bestimmen, was sonst noch erscheint:
 
@@ -19,4 +19,4 @@ Runde, quadratische und rechteckige Uhren bekommen jeweils ein eigenes Layout.
 
 Quellcode: https://github.com/tkuenneth/c64_tribute_watchface
 
-C64 Tribute Watch Face steht unter der GNU General Public License Version 3. Es verwendet die Schrift Pet Me 64 von Rebecca G. Bettencourt, Kreative Software, unter der Kreative Software Relay Fonts Free Use License.
+C64 Tribute WatchFace steht unter der GNU General Public License Version 3. Es verwendet die Schrift Pet Me 64 von Rebecca G. Bettencourt, Kreative Software, unter der Kreative Software Relay Fonts Free Use License.
