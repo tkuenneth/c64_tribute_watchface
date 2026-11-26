@@ -1,0 +1,2 @@
+- Jede Option des Zifferblatts hat jetzt eine eigene Seite, nichts wird mehr abgeschnitten
+- Der Wochentag im Datum erscheint wieder ohne Punkt

@@ -1,0 +1,4 @@
+- Each watch face option is now a page of its own, so the choices are no longer cut off
+- The weekday in the date is shown without a trailing dot again
+- Folding the phone no longer shows the settings screen for a moment
+- Every settings row now reads as one switch for screen readers

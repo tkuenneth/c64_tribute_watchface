@@ -1,0 +1,4 @@
+- Jede Option des Zifferblatts hat jetzt eine eigene Seite, nichts wird mehr abgeschnitten
+- Der Wochentag im Datum erscheint wieder ohne Punkt
+- Beim Auf- und Zuklappen blitzen die Einstellungen nicht mehr auf
+- Jede Einstellungszeile wird für Screenreader als ein Schalter vorgelesen
